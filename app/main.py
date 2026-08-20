@@ -1,3 +1,4 @@
+import logging
 import os
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
@@ -14,6 +15,10 @@ from app.utils import generate_short_code
 # Load environment variables
 load_dotenv()
 BASE_URL = os.getenv("BASE_URL", "http://localhost:8000").rstrip("/")
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("url_shortener")
 
 
 @asynccontextmanager
@@ -53,6 +58,7 @@ def shorten_url(payload: URLCreate, db: Session = Depends(get_db)):
         # Check if short code already exists in DB
         existing = db.query(URL).filter(URL.short_code == short_code).first()
         if existing:
+            logger.info(f"Short code collision for '{short_code}', retrying generation...")
             continue
 
         url_record = URL(original_url=original_url, short_code=short_code)
@@ -63,9 +69,11 @@ def shorten_url(payload: URLCreate, db: Session = Depends(get_db)):
             db.refresh(url_record)
             
             full_short_url = f"{BASE_URL}/{short_code}"
+            logger.info(f"Created short_code '{short_code}' for URL '{original_url}' (ID: {url_record.id})")
             return URLResponse(short_code=short_code, short_url=full_short_url)
         except IntegrityError:
             db.rollback()
+            logger.warning(f"IntegrityError on short_code '{short_code}' (attempt {attempt + 1}), retrying...")
             if attempt == max_retries - 1:
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -87,14 +95,19 @@ def shorten_url(payload: URLCreate, db: Session = Depends(get_db)):
 )
 def redirect_to_url(short_code: str, db: Session = Depends(get_db)):
     """Endpoint to redirect a short code to its original URL."""
-    url_record = db.query(URL).filter(URL.short_code == short_code).first()
+    clean_code = short_code.strip()
+    logger.info(f"Looking up short_code: '{clean_code}'")
+
+    url_record = db.query(URL).filter(URL.short_code == clean_code).first()
     
     if not url_record:
+        logger.warning(f"Short code '{clean_code}' not found in database.")
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Short URL not found",
         )
     
+    logger.info(f"Found record for '{clean_code}' -> Redirecting to '{url_record.original_url}'")
     return RedirectResponse(
         url=url_record.original_url,
         status_code=status.HTTP_307_TEMPORARY_REDIRECT,

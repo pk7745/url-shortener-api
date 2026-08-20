@@ -113,3 +113,21 @@ def test_invalid_url_rejection(client):
     for payload in invalid_payloads:
         response = client.post("/shorten", json=payload)
         assert response.status_code == 422
+
+
+def test_full_shorten_and_redirect_flow(client):
+    """Explicit regression test covering POST /shorten -> short_code -> GET /{short_code} -> 307 redirect."""
+    original_url = "https://www.google.com"
+    post_response = client.post("/shorten", json={"url": original_url})
+    assert post_response.status_code == 201
+    
+    data = post_response.json()
+    assert "short_code" in data
+    assert "short_url" in data
+    
+    short_code = data["short_code"]
+    assert len(short_code) == 6
+    
+    get_response = client.get(f"/{short_code}", follow_redirects=False)
+    assert get_response.status_code == 307
+    assert get_response.headers["location"].rstrip("/") == original_url.rstrip("/")
