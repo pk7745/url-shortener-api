@@ -15,6 +15,10 @@ if not DATABASE_URL:
         "PostgreSQL connection string is required."
     )
 
+# Normalize Render PostgreSQL connection string (postgres:// -> postgresql://)
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
 if not DATABASE_URL.startswith(("postgresql://", "postgresql+psycopg2://", "postgresql+asyncpg://")):
     raise RuntimeError(
         f"CRITICAL: Invalid DATABASE_URL configuration. Only PostgreSQL is supported, "

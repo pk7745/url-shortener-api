@@ -370,15 +370,25 @@ The application uses PostgreSQL with SQLAlchemy ORM.
 
 ---
 
-## Deployment Readiness
+## Render Deployment Guide
 
-Deploying this application to a production environment requires:
+This application is ready for production deployment on **Render**:
 
-- A Python 3.11+ runtime environment
-- A managed or hosted PostgreSQL database instance
-- Setting the `DATABASE_URL` environment variable to point to the production PostgreSQL cluster
-- Setting the `BASE_URL` environment variable to match the production domain name
-- An ASGI production server command (such as `uvicorn app.main:app --host 0.0.0.0 --port 8000` or Gunicorn with Uvicorn workers)
+### 1. Provision PostgreSQL Database
+- In the Render Dashboard, click **New +** → **PostgreSQL**.
+- Copy the provided **Internal Database URL**.
+
+### 2. Deploy Web Service
+- Click **New +** → **Web Service** and connect the repository (`https://github.com/pk7745/url-shortener-api`).
+- Configure settings:
+  - **Environment**: Python 3
+  - **Build Command**: `pip install -r requirements.txt`
+  - **Start Command**: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+
+### 3. Set Environment Variables
+In the Render Web Service **Environment** tab, set:
+- `DATABASE_URL`: Set to the Render PostgreSQL connection string (the application automatically converts Render's `postgres://` scheme to `postgresql://`).
+- `BASE_URL`: Set to your deployed service URL (e.g., `https://url-shortener-api.onrender.com`).
 
 ---
 
