@@ -176,11 +176,11 @@ Copy-Item .env.example .env
 Configure `.env` as follows:
 
 ```env
-DATABASE_URL=postgresql://username:password@localhost:5432/url_shortener
+DATABASE_URL=your_database_url_here
 BASE_URL=http://localhost:8000
 ```
 
-- **`DATABASE_URL`**: The PostgreSQL connection string used by SQLAlchemy (`postgresql://<user>:<password>@<host>:<port>/<dbname>`).
+- **`DATABASE_URL`**: The PostgreSQL connection string used by SQLAlchemy.
 - **`BASE_URL`**: The base address used to construct complete shortened URLs returned by `POST /shorten`.
 
 ---

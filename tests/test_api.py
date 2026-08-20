@@ -1,5 +1,6 @@
 import os
 import pytest
+from dotenv import load_dotenv
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -8,8 +9,17 @@ from app.database import Base, get_db
 from app.main import app
 from app.models import URL
 
-# Obtain DATABASE_URL from environment for testing
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/url_shortener_test")
+# Load environment variables from .env
+load_dotenv()
+
+# Obtain DATABASE_URL exclusively from environment
+DATABASE_URL = os.getenv("DATABASE_URL")
+if not DATABASE_URL:
+    raise RuntimeError(
+        "DATABASE_URL environment variable is required for tests. "
+        "Please configure DATABASE_URL in your environment or .env file."
+    )
+
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
