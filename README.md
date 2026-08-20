@@ -1,41 +1,44 @@
 # URL Shortener API
 
-A production-quality backend REST API for shortening URLs and handling HTTP redirects, built with **FastAPI**, **PostgreSQL**, **SQLAlchemy**, and **Pydantic**. Created as an internship evaluation backend project.
+> A RESTful backend API for creating shortened URLs and redirecting short links to their original destinations, built with FastAPI and PostgreSQL. Developed as an internship evaluation project.
 
 ---
 
 ## Overview
 
-The **URL Shortener API** allows clients to convert long web URLs into compact, unique short codes and shortened URLs. When a user requests the shortened URL via its short code, the API queries PostgreSQL and issues an HTTP 307 temporary redirect to the original web address.
+The **URL Shortener API** is a lightweight, backend RESTful web service designed to convert long HTTP/HTTPS URLs into compact, unique short codes. When a client requests a generated short code, the API queries PostgreSQL for the target mapping and responds with an HTTP 307 redirect to the original URL.
 
-This application is designed following clean architecture principles, explicit database transaction handling, strict URL validation, robust error handling, automated unit testing, and OpenAPI documentation.
+This application is built with FastAPI, using SQLAlchemy for database operations and Pydantic for input validation. All URL mappings are stored persistently in a PostgreSQL database, ensuring data longevity across application restarts without relying on in-memory state or fallback databases.
 
 ---
 
 ## Features
 
-- **URL Shortening**: Accepts long HTTP/HTTPS URLs and generates compact Base62 short codes.
-- **PostgreSQL Persistence**: Fully persistent data storage using PostgreSQL and SQLAlchemy ORM.
-- **Unique Short-Code Generation**: Collision-resistant short code generation with database-level uniqueness enforcement and automatic retry logic.
-- **HTTP Redirects**: Implements standard HTTP 307 redirects to seamlessly route short links to original target URLs.
-- **Strict Validation**: Validates incoming URLs using Pydantic schema validation to ensure only valid HTTP/HTTPS web addresses are accepted.
-- **Error Handling**: Friendly, structured HTTP error responses (e.g. 404 for unknown codes, 422 for invalid URLs, 500 for server errors).
-- **Interactive Documentation**: Built-in Swagger UI documentation (`/docs`) for easy manual testing.
-- **Automated Test Suite**: Full `pytest` integration covering end-to-end API behaviors.
+- **URL Shortening**: Accepts long HTTP/HTTPS URLs and returns compact Base62 short codes.
+- **Unique Short-Code Generation**: Generates collision-resistant short codes with database-level uniqueness constraints and retry handling.
+- **PostgreSQL Persistence**: Stores all URL mappings in PostgreSQL with automatic creation timestamps.
+- **HTTP 307 Redirects**: Issues HTTP 307 Temporary Redirect responses for valid short codes.
+- **Strict Input Validation**: Validates incoming request payloads using Pydantic to ensure only valid HTTP/HTTPS URLs are processed.
+- **404 Error Handling**: Returns an HTTP 404 Not Found response when a requested short code does not exist.
+- **Database-Level Uniqueness**: Enforces unique constraints on short codes in PostgreSQL.
+- **Automatic Interactive Documentation**: Exposes Swagger UI (`/docs`) and ReDoc (`/redoc`) endpoints provided by FastAPI.
+- **Automated Test Suite**: Includes an end-to-end unit and integration test suite using `pytest`.
 
 ---
 
 ## Technology Stack
 
-- **Language**: Python 3.11+
-- **Framework**: FastAPI
-- **Database**: PostgreSQL
-- **ORM**: SQLAlchemy 2.0+
-- **Driver**: psycopg2-binary
-- **Validation**: Pydantic v2
-- **ASGI Server**: Uvicorn
-- **Testing**: Pytest & HTTPX / TestClient
-- **Environment**: python-dotenv
+| Technology | Purpose |
+| :--- | :--- |
+| **Python** | Backend programming language |
+| **FastAPI** | REST API web framework |
+| **PostgreSQL** | Persistent relational database |
+| **SQLAlchemy** | ORM and database interaction |
+| **Pydantic** | Request/response validation and schemas |
+| **Uvicorn** | ASGI web server |
+| **Pytest** | Test runner and framework |
+| **HTTPX / TestClient** | API endpoint integration testing |
+| **python-dotenv** | Environment variable management |
 
 ---
 
@@ -46,101 +49,143 @@ url-shortener-api/
 │
 ├── app/
 │   ├── __init__.py      # Package initializer
-│   ├── main.py          # FastAPI application entrypoint, middleware, routes
-│   ├── database.py      # PostgreSQL connection string, SQLAlchemy engine & session factory
-│   ├── models.py        # SQLAlchemy database model for URLs table
-│   ├── schemas.py       # Pydantic request and response schemas
-│   └── utils.py         # URL-safe short code generator utility
+│   ├── main.py          # FastAPI application entry point, lifecycle, and route handlers
+│   ├── database.py      # PostgreSQL SQLAlchemy engine, session maker, and connection verification
+│   ├── models.py        # SQLAlchemy model mapping for the "urls" table
+│   ├── schemas.py       # Pydantic schemas for request validation and response formatting
+│   └── utils.py         # URL-safe Base62 short code generator utility
 │
 ├── tests/
 │   ├── __init__.py      # Test package initializer
-│   └── test_api.py      # End-to-end API test suite using pytest
+│   └── test_api.py      # Automated API test suite using Pytest and FastAPI TestClient
 │
-├── .env.example         # Environment variable template
+├── .env.example         # Template for environment variables
 ├── .gitignore            # Git ignore rules for virtual environments, secrets, and caches
-├── requirements.txt     # Python dependency specifications
-├── schema.sql           # PostgreSQL DDL script for database table creation
-└── README.md            # Comprehensive project documentation
+├── requirements.txt     # Python dependency manifest
+├── schema.sql           # PostgreSQL table DDL creation script
+└── README.md            # Project documentation
 ```
 
 ---
 
 ## Prerequisites
 
-Before running the application, ensure you have installed:
-1. **Python 3.11+** (or Python 3.10+)
-2. **PostgreSQL** server running locally or remotely
-3. **Git** (optional, for version control)
+Before setting up and running the application, ensure the following are installed on your system:
+
+- **Python 3.11+** (or Python 3.10+)
+- **PostgreSQL** database server (must be installed and running)
+- **Git** (useful for cloning the repository)
+
+> [!IMPORTANT]
+> The application requires an active PostgreSQL database connection to operate. It does not use SQLite or in-memory database fallbacks.
 
 ---
 
-## PostgreSQL Setup
+## Setup Instructions
 
-1. **Start PostgreSQL Service**: Ensure your PostgreSQL server instance is running.
-2. **Create Database**:
-   Open `psql` or your PostgreSQL management tool (e.g., pgAdmin) and execute:
-   ```sql
-   CREATE DATABASE url_shortener;
-   ```
-3. **Create Database Table**:
-   Apply the provided `schema.sql` script to create the `urls` table:
-   ```bash
-   psql -U postgres -d url_shortener -f schema.sql
-   ```
-   *Note: SQLAlchemy will also automatically create the table on application startup if it does not already exist.*
+### Step 1 — Clone the Repository
+
+```bash
+git clone https://github.com/pk7745/url-shortener-api.git
+cd url-shortener-api
+```
+
+---
+
+### Step 2 — Create a Virtual Environment
+
+#### Windows (PowerShell)
+
+```powershell
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+```
+
+#### Windows (Command Prompt)
+
+```cmd
+python -m venv .venv
+.venv\Scripts\activate
+```
+
+#### Linux / macOS
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+---
+
+### Step 3 — Install Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+---
+
+## PostgreSQL Database Setup
+
+### 1. Create the Database
+
+Log in to your PostgreSQL instance using `psql` or a administration tool (such as pgAdmin) and create a database:
+
+```sql
+CREATE DATABASE url_shortener;
+```
+
+*(If you choose a different database name, update your `DATABASE_URL` in `.env` accordingly).*
+
+### 2. Create the Table
+
+Apply the provided `schema.sql` script to create the `urls` table and associated index:
+
+```bash
+psql -U postgres -d url_shortener -f schema.sql
+```
+
+*Note: The application also executes SQLAlchemy table creation on startup if the table does not already exist.*
 
 ---
 
 ## Environment Variables
 
-The application requires environment configuration specified in a `.env` file at the root directory.
+Environment variables are managed using a `.env` file at the root of the project directory.
 
-Create a `.env` file by copying `.env.example`:
+- `.env.example` is committed to GitHub as a safe configuration template.
+- `.env` is created locally and contains environment-specific settings.
+- `.env` is listed in `.gitignore` to prevent committing sensitive information.
+
+### Create `.env` from Template
+
+#### Linux / macOS / Git Bash
+
 ```bash
 cp .env.example .env
 ```
 
-Configure your parameters in `.env`:
-```env
-# PostgreSQL connection string (Replace username, password, host, port, dbname)
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/url_shortener
+#### Windows PowerShell
 
-# Base URL for constructing complete shortened links returned by /shorten
+```powershell
+Copy-Item .env.example .env
+```
+
+### Configuration Parameters
+
+Configure `.env` as follows:
+
+```env
+DATABASE_URL=postgresql://username:password@localhost:5432/url_shortener
 BASE_URL=http://localhost:8000
 ```
 
-> [!WARNING]
-> Never commit your `.env` file or real database credentials to Git repositories.
+- **`DATABASE_URL`**: The PostgreSQL connection string used by SQLAlchemy (`postgresql://<user>:<password>@<host>:<port>/<dbname>`).
+- **`BASE_URL`**: The base address used to construct complete shortened URLs returned by `POST /shorten`.
 
 ---
 
-## Installation
-
-1. **Clone or Navigate to the Repository**:
-   ```bash
-   cd url-shortener-api
-   ```
-
-2. **Create a Python Virtual Environment**:
-   - **Linux / macOS**:
-     ```bash
-     python3 -m venv .venv
-     source .venv/bin/activate
-     ```
-   - **Windows**:
-     ```powershell
-     python -m venv .venv
-     .venv\Scripts\Activate.ps1
-     ```
-
-3. **Install Dependencies**:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
----
-
-## Running the API
+## Run the Application
 
 Start the API server using Uvicorn:
 
@@ -148,113 +193,201 @@ Start the API server using Uvicorn:
 uvicorn app.main:app --reload
 ```
 
-The API server will start on `http://localhost:8000`.
+- `app.main` references `app/main.py`.
+- `app` is the FastAPI application instance.
+- `--reload` enables auto-reload on code changes during development.
+
+The server will start listening at:
+`http://localhost:8000`
 
 ---
 
-## API Usage
+## Verify the Application
 
-### 1. Shorten a URL
+Once the server is running, confirm it is active by accessing the automatically generated documentation in your browser:
 
-- **Endpoint**: `POST /shorten`
+- **Swagger UI**: [http://localhost:8000/docs](http://localhost:8000/docs)
+- **ReDoc**: [http://localhost:8000/redoc](http://localhost:8000/redoc)
+
+---
+
+## API Documentation
+
+### POST `/shorten`
+
+Accepts a long HTTP/HTTPS URL, validates its format, generates a unique short code, stores the record in PostgreSQL, and returns the shortened URL.
+
+#### Request Body
+
 - **Content-Type**: `application/json`
-- **Request Body**:
-  ```json
-  {
-    "url": "https://example.com/a/very/long/url"
-  }
-  ```
-- **Response**: HTTP 201 Created
-  ```json
-  {
-    "short_code": "aB92xK",
-    "short_url": "http://localhost:8000/aB92xK"
-  }
-  ```
 
-### 2. Redirect to Original URL
-
-- **Endpoint**: `GET /{short_code}`
-- **Example**: `GET /aB92xK`
-- **Response**: HTTP 307 Temporary Redirect
-  - Redirects browser/client to `https://example.com/a/very/long/url`.
-
----
-
-## Error Cases
-
-| Scenario | HTTP Status Code | Response Body Example |
-| :--- | :--- | :--- |
-| **Invalid URL** | `422 Unprocessable Entity` | `{"detail": [{"loc": ["body", "url"], "msg": "Invalid HTTP/HTTPS URL provided...", "type": "value_error"}]}` |
-| **Unknown Short Code** | `404 Not Found` | `{"detail": "Short URL not found"}` |
-| **Database Failure** | `500 Internal Server Error` | `{"detail": "Failed to connect to PostgreSQL database..."}` |
-
----
-
-## Swagger Documentation
-
-FastAPI automatically generates interactive OpenAPI documentation.
-
-After starting the server, open your web browser and navigate to:
-```text
-http://localhost:8000/docs
+```json
+{
+  "url": "https://example.com/a/very/long/url"
+}
 ```
 
-From the Swagger UI interface, you can test `POST /shorten` and `GET /{short_code}` directly.
+#### Successful Response (`201 Created`)
+
+```json
+{
+  "short_code": "aB92xK",
+  "short_url": "http://localhost:8000/aB92xK"
+}
+```
+
+---
+
+### GET `/{short_code}`
+
+Receives a short code, queries PostgreSQL for the matching original URL, and issues an HTTP redirect.
+
+#### Example Request
+
+```text
+GET /aB92xK
+```
+
+#### Responses
+
+- **HTTP `307 Temporary Redirect`**: Redirects client to the original URL.
+- **HTTP `404 Not Found`**: Returned when the requested short code does not exist.
+  ```json
+  {
+    "detail": "Short URL not found"
+  }
+  ```
+
+---
+
+## End-to-End Example
+
+```text
+1. Start PostgreSQL server.
+2. Configure .env with valid DATABASE_URL and BASE_URL.
+3. Start FastAPI using: uvicorn app.main:app --reload
+4. Open http://localhost:8000/docs.
+5. Execute POST /shorten with {"url": "https://example.com"}.
+6. Receive response: {"short_code": "nnrOh3", "short_url": "http://localhost:8000/nnrOh3"}.
+7. Open http://localhost:8000/nnrOh3 in a browser or API client.
+8. The API queries PostgreSQL for "nnrOh3".
+9. The API returns an HTTP 307 Temporary Redirect.
+10. The client is redirected to https://example.com.
+```
+
+---
+
+## Error Handling
+
+| Scenario | HTTP Status Code | Response / Details |
+| :--- | :---: | :--- |
+| **Invalid HTTP/HTTPS URL** | `422` | Validation error detailing malformed or empty URL |
+| **Unknown Short Code** | `404` | `{"detail": "Short URL not found"}` |
+| **Database Failure / Missing Config** | `500` / `RuntimeError` | PostgreSQL operational error or connection refusal |
 
 ---
 
 ## Testing
 
-Run the automated pytest test suite:
+The project includes an automated test suite using `pytest` and FastAPI `TestClient`.
+
+### Run Tests
 
 ```bash
 pytest tests/
 ```
 
-To view verbose output:
+To run with verbose output:
+
 ```bash
 pytest -v tests/
 ```
 
+### What the Test Suite Covers
+
+- `test_shorten_url_success`: Verifies `POST /shorten` creates short code and full URL.
+- `test_shorten_url_persisted_in_db`: Verifies records are saved to the PostgreSQL database.
+- `test_redirect_to_original_url`: Verifies `GET /{short_code}` returns an HTTP 307 redirect to target URL.
+- `test_redirect_unknown_short_code`: Verifies unknown short code requests return HTTP 404.
+- `test_invalid_url_rejection`: Verifies non-HTTP/HTTPS and malformed URLs are rejected with HTTP 422.
+
 ---
 
-## Example End-to-End Flow
+## Architecture / Request Flow
 
 ```text
-1. Client sends long URL:
-   POST /shorten  -->  {"url": "https://python.org"}
-
-2. Application:
-   - Validates input URL format
-   - Generates unique short code (e.g., "PyCode")
-   - Persists mapping in PostgreSQL table "urls"
-
-3. Response returned to Client:
-   HTTP 201 Created --> {"short_code": "PyCode", "short_url": "http://localhost:8000/PyCode"}
-
-4. Client requests shortened link:
-   GET /PyCode
-
-5. Application:
-   - Queries PostgreSQL for "PyCode"
-   - Issues HTTP 307 Redirect to "https://python.org"
+Client
+   │
+   ▼
+FastAPI
+   │
+   ├── POST /shorten
+   │       │
+   │       ▼
+   │   Validate URL (Pydantic)
+   │       │
+   │       ▼
+   │   Generate Short Code (utils)
+   │       │
+   │       ▼
+   │   PostgreSQL (Save mapping)
+   │
+   └── GET /{short_code}
+           │
+           ▼
+       PostgreSQL Lookup
+           │
+           ▼
+       HTTP 307 Redirect
+           │
+           ▼
+       Original Destination URL
 ```
 
 ---
 
-## Design Decisions
+## Database Schema
 
-- **PostgreSQL Persistence**: PostgreSQL provides enterprise-grade ACID transactions, indexing support, and robust concurrency control for link persistence.
-- **Database-Level Uniqueness**: The `short_code` field contains a unique index in PostgreSQL, guaranteeing persistence-level uniqueness even across concurrent API workers.
-- **HTTP 307 Redirect**: Using HTTP 307 Temporary Redirect preserves the HTTP method and signals to HTTP clients that link targets may change dynamically.
-- **Pydantic Validation**: Input URLs are strictly validated at the API boundary before hitting database sessions.
-- **Environment Isolation**: Database connection details are loaded exclusively from `.env` variables via `python-dotenv`, preventing hardcoded credentials.
+The application uses PostgreSQL with SQLAlchemy ORM.
+
+### Table: `urls`
+
+| Column | Data Type | Constraints | Description |
+| :--- | :--- | :--- | :--- |
+| `id` | `INTEGER` | Primary Key, Auto-increment | Unique surrogate identifier |
+| `original_url` | `TEXT` | NOT NULL | The original destination URL |
+| `short_code` | `VARCHAR(20)` | NOT NULL, UNIQUE, Indexed | Unique Base62 short code string |
+| `created_at` | `TIMESTAMP WITH TIME ZONE` | NOT NULL, Default `NOW()` | Automatic record creation timestamp |
 
 ---
 
-## Limitations & Future Improvements
+## Security & Configuration Notes
 
-- **Cache Layer**: Adding Redis caching for high-frequency short link redirects.
-- **Custom Alias Support**: Allowing users to specify custom short codes during shortening.
-- **Rate Limiting**: Incorporating rate limiting to prevent API abuse.
+- Database credentials and connection parameters are loaded via environment variables using `python-dotenv`.
+- `.env` is listed in `.gitignore` and excluded from Git tracking.
+- `.env.example` is provided as a reference template without real credentials.
+- SQL operations are handled through SQLAlchemy ORM parameterization to prevent SQL injection.
+
+---
+
+## Deployment Readiness
+
+Deploying this application to a production environment requires:
+
+- A Python 3.11+ runtime environment
+- A managed or hosted PostgreSQL database instance
+- Setting the `DATABASE_URL` environment variable to point to the production PostgreSQL cluster
+- Setting the `BASE_URL` environment variable to match the production domain name
+- An ASGI production server command (such as `uvicorn app.main:app --host 0.0.0.0 --port 8000` or Gunicorn with Uvicorn workers)
+
+---
+
+## Future Improvements
+
+*The following features are NOT currently implemented in this assignment codebase and represent optional future enhancements:*
+
+- **Redis Caching**: Adding Redis caching for fast lookup of high-frequency short code redirects.
+- **Custom Short Code Aliases**: Allowing users to specify custom short code strings during shortening.
+- **Rate Limiting**: Implementing rate limiting middleware to prevent API abuse.
+- **Click Analytics**: Tracking redirect request counts and timestamp analytics per link.
+- **User Authentication**: Adding user accounts and authentication for link management.
