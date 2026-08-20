@@ -131,3 +131,16 @@ def test_full_shorten_and_redirect_flow(client):
     get_response = client.get(f"/{short_code}", follow_redirects=False)
     assert get_response.status_code == 307
     assert get_response.headers["location"].rstrip("/") == original_url.rstrip("/")
+
+
+def test_custom_base_url_configuration(monkeypatch, client):
+    """Test that POST /shorten respects the BASE_URL environment variable when set."""
+    custom_domain = "https://your-service.onrender.com"
+    monkeypatch.setenv("BASE_URL", custom_domain)
+    
+    response = client.post("/shorten", json={"url": "https://example.org/test"})
+    assert response.status_code == 201
+    
+    data = response.json()
+    assert data["short_url"].startswith(custom_domain)
+    assert data["short_url"] == f"{custom_domain}/{data['short_code']}"

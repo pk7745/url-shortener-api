@@ -2,7 +2,7 @@ import logging
 import os
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.responses import RedirectResponse
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -14,7 +14,6 @@ from app.utils import generate_short_code
 
 # Load environment variables
 load_dotenv()
-BASE_URL = os.getenv("BASE_URL", "http://localhost:8000").rstrip("/")
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -40,6 +39,14 @@ app = FastAPI(
 )
 
 
+def get_base_url(request: Request) -> str:
+    """Helper function to resolve application base URL from environment or request headers."""
+    configured_base = os.getenv("BASE_URL")
+    if configured_base and configured_base.strip():
+        return configured_base.strip().rstrip("/")
+    return str(request.base_url).rstrip("/")
+
+
 @app.post(
     "/shorten",
     response_model=URLResponse,
@@ -47,10 +54,11 @@ app = FastAPI(
     summary="Shorten a long URL",
     description="Accepts a valid HTTP/HTTPS URL, generates a compact unique short code, stores the mapping in PostgreSQL, and returns the short code along with the complete shortened URL.",
 )
-def shorten_url(payload: URLCreate, db: Session = Depends(get_db)):
+def shorten_url(payload: URLCreate, request: Request, db: Session = Depends(get_db)):
     """Endpoint to shorten a provided long URL."""
     original_url = payload.url
     max_retries = 5
+    base_url = get_base_url(request)
 
     for attempt in range(max_retries):
         short_code = generate_short_code()
@@ -68,8 +76,8 @@ def shorten_url(payload: URLCreate, db: Session = Depends(get_db)):
             db.commit()
             db.refresh(url_record)
             
-            full_short_url = f"{BASE_URL}/{short_code}"
-            logger.info(f"Created short_code '{short_code}' for URL '{original_url}' (ID: {url_record.id})")
+            full_short_url = f"{base_url}/{short_code}"
+            logger.info(f"Created short_code '{short_code}' for URL '{original_url}' (ID: {url_record.id}) -> {full_short_url}")
             return URLResponse(short_code=short_code, short_url=full_short_url)
         except IntegrityError:
             db.rollback()

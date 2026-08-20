@@ -176,12 +176,12 @@ Copy-Item .env.example .env
 Configure `.env` as follows:
 
 ```env
+BASE_URL=https://your-render-service.onrender.com
 DATABASE_URL=your_database_url_here
-BASE_URL=http://localhost:8000
 ```
 
+- **`BASE_URL`**: The base address used to construct complete shortened URLs returned by `POST /shorten` (set to your Render service address e.g. `https://your-render-service.onrender.com`).
 - **`DATABASE_URL`**: The PostgreSQL connection string used by SQLAlchemy.
-- **`BASE_URL`**: The base address used to construct complete shortened URLs returned by `POST /shorten`.
 
 ---
 
